@@ -129,8 +129,12 @@ target_include_directories(lunar_trail PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/gen
 )
 
+# SDL2main provides the WinMain entry point that MSVC's linker needs to find
+# `main`. It is a no-op on the other platforms, so it is linked unconditionally
+# rather than behind a platform branch that would rot.
 target_link_libraries(lunar_trail PRIVATE
     SDL2::SDL2
+    SDL2::SDL2main
     SDL2_image::SDL2_image
     SDL2_ttf::SDL2_ttf
     SDL2_mixer::SDL2_mixer)
@@ -217,8 +221,10 @@ add_executable(lunar_trail_ui_capture EXCLUDE_FROM_ALL
 target_include_directories(lunar_trail_ui_capture PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/gen)
+# SDL2main supplies the WinMain wrapper on Windows, for the same reason the game
+# links it: MSVC will not find a plain `main` without it.
 target_link_libraries(lunar_trail_ui_capture PRIVATE
-    SDL2::SDL2 SDL2_image::SDL2_image SDL2_ttf::SDL2_ttf)
+    SDL2::SDL2 SDL2::SDL2main SDL2_image::SDL2_image SDL2_ttf::SDL2_ttf)
 
 install(TARGETS lunar_trail RUNTIME DESTINATION bin)
 install(DIRECTORY content/ DESTINATION share/lunar_trail/content)
