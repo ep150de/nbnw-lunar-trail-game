@@ -47,8 +47,14 @@ sudo pacman -S base-devel cmake sdl2 sdl2_image sdl2_ttf sdl2_mixer
 # macOS
 brew install cmake sdl2 sdl2_image sdl2_ttf sdl2_mixer
 
-# Windows (vcpkg)
-vcpkg install sdl2 sdl2_image sdl2_ttf sdl2_mixer
+# Windows (vcpkg manifest)
+vcpkg install   # dependencies are declared in vcpkg.json
+```
+
+On Windows, configure with the vcpkg toolchain:
+
+```
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake
 ```
 
 Then:

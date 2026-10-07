@@ -87,11 +87,13 @@ jobs:
       - name: Install SDL2 via vcpkg
         run: |
           git clone https://github.com/microsoft/vcpkg
-          # `--%` stops PowerShell from re-parsing the argument list. Without it
-          # PowerShell mangles `sdl2_image` into a URL-ish token and vcpkg fails
-          # with "invalid character in port name".
-          & ./vcpkg/vcpkg install --% sdl2 sdl2_image sdl2_ttf sdl2_mixer
-          echo "VCPKG_ROOT=$PWD/vcpkg" >> $env:GITHUB_ENV
+          # Manifest mode: the dependency list lives in vcpkg.json, so no package
+          # names are passed on the command line. PowerShell re-parses a native
+          # command's argument list, which mangled `sdl2_image` into a URL-ish
+          # token and made vcpkg abort with "invalid character in port name".
+          & "$env:GITHUB_WORKSPACE\vcpkg\vcpkg.exe" install `
+              --triplet x64-windows --x-manifest-root="$env:GITHUB_WORKSPACE"
+          echo "VCPKG_ROOT=$env:GITHUB_WORKSPACE\vcpkg" >> $env:GITHUB_ENV
         shell: pwsh
       - name: Configure
         run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DLUNAR_TRAIL_BUILD_TESTS=ON

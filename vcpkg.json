@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "lunar-trail",
+  "version": "0.1.0",
+  "description": "A lunar south-pole survival logistics game.",
+  "dependencies": [
+    "sdl2",
+    "sdl2-image",
+    "sdl2-ttf",
+    "sdl2-mixer"
+  ]
+}
