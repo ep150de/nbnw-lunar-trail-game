@@ -11,6 +11,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -80,6 +81,22 @@ RunState healthyRun(const Balance& b, Profession p = Profession::MissionSpeciali
     s.hardware.sparesBogie = 3;
     s.hardware.sparesSeal = 3;
     return s;
+}
+
+// A writable scratch path for tests that need a real file on disk.
+std::string tempFilePath(const char* name) {
+    std::string dir;
+#if defined(_WIN32)
+    if (const char* t = std::getenv("TEMP")) dir = t;
+    else if (const char* t = std::getenv("TMP")) dir = t;
+    else dir = ".";
+#else
+    if (const char* t = std::getenv("TMPDIR")) dir = t;
+    else dir = "/tmp";
+#endif
+    const bool trailing = !dir.empty() && (dir.back() == '/' || dir.back() == '\\');
+    if (trailing) dir.pop_back();
+    return dir + "/" + name;
 }
 
 void RunStationaryCheck(const Balance& b);
@@ -1262,7 +1279,10 @@ void testBalanceOverride() {
 
     // Write a temp file, load it, confirm the override and that untouched keys
     // keep their defaults.
-    const std::string path = "/tmp/lt_balance_test.json";
+    //
+    // The path goes through the platform's temp directory rather than a literal
+    // "/tmp", which does not exist on Windows and made this test fail there.
+    const std::string path = tempFilePath("lt_balance_test.json");
     FILE* f = std::fopen(path.c_str(), "w");
     CHECK(f != nullptr);
     if (f != nullptr) {
@@ -1279,7 +1299,7 @@ void testBalanceOverride() {
 
     // A missing file must not be fatal.
     Balance m;
-    CHECK(!m.load("/tmp/definitely_not_here_12345.json"));
+    CHECK(!m.load(tempFilePath("definitely_not_here_12345.json")));
     CHECK_NEAR(m.payloadCapKg, 2100.0, 1e-9);
 }
 
