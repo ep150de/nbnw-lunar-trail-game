@@ -26,15 +26,65 @@ option(LUNAR_TRAIL_BUILD_TESTS "Build the headless test suite" ON)
 #   Arch          : sudo pacman -S sdl2 sdl2_image sdl2_ttf sdl2_mixer
 #   macOS         : brew install sdl2 sdl2_image sdl2_ttf sdl2_mixer
 #   Windows       : vcpkg install sdl2 sdl2_image sdl2_ttf sdl2_mixer
+# The SDL2 addons are looked for two ways.
+#
+# Distribution packages frequently ship the libraries and their pkg-config files
+# but no CMake package config: Ubuntu 22.04's libsdl2-image-dev, for one, has
+# `sdl2_image.pc` and no `sdl2_image-config.cmake`. Requiring the config file
+# therefore fails on the most common Linux install of all, even though the
+# development headers are present. So: try CONFIG first, and fall back to
+# pkg-config, which is what those packages do provide.
 find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
-find_package(SDL2_ttf REQUIRED)
-find_package(SDL2_mixer REQUIRED)
 
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+    # The .pc filenames differ between distributions: Debian and Ubuntu ship
+    # `SDL2_image.pc`, Homebrew ships `sdl2_image.pc`. Probe both spellings so one
+    # CMake configure works on either, rather than only on the machine the
+    # maintainer happens to be using.
+    foreach(_addon SDL2_image SDL2_ttf SDL2_mixer)
+        string(TOLOWER "${_addon}" _lower)
+        pkg_check_modules(${_addon} QUIET IMPORTED_TARGET ${_addon})
+        if(NOT ${_addon}_FOUND)
+            pkg_check_modules(${_addon} QUIET IMPORTED_TARGET ${_lower})
+        endif()
+    endforeach()
+endif()
+
+# The _FOUND variables are spelled exactly as the pkg module names: CMake keeps
+# them case sensitive, and `SDL2_IMAGE_FOUND` is a different variable from the
+# `SDL2_image_FOUND` that pkg_check_modules actually sets.
+if(NOT SDL2_image_FOUND)
+    find_package(SDL2_image REQUIRED)
+endif()
+if(NOT SDL2_ttf_FOUND)
+    find_package(SDL2_ttf REQUIRED)
+endif()
+if(NOT SDL2_mixer_FOUND)
+    find_package(SDL2_mixer REQUIRED)
+endif()
+
+if(TARGET PkgConfig::SDL2_image)
+    add_library(SDL2_image::SDL2_image ALIAS PkgConfig::SDL2_image)
+endif()
+if(TARGET PkgConfig::SDL2_ttf)
+    add_library(SDL2_ttf::SDL2_ttf ALIAS PkgConfig::SDL2_ttf)
+endif()
+if(TARGET PkgConfig::SDL2_mixer)
+    add_library(SDL2_mixer::SDL2_mixer ALIAS PkgConfig::SDL2_mixer)
+endif()
+
+# The addon versions are empty when a package came from pkg-config, since
+# pkg_check_modules does not fill the find_package version variables. That is
+# expected, not a failure; report the path taken so it is diagnosable.
 message(STATUS "SDL2        ${SDL2_VERSION}")
-message(STATUS "SDL2_image  ${SDL2_IMAGE_VERSION}")
-message(STATUS "SDL2_ttf    ${SDL2_TTF_VERSION}")
-message(STATUS "SDL2_mixer  ${SDL2_MIXER_VERSION}")
+if(TARGET PkgConfig::SDL2_IMAGE)
+    message(STATUS "SDL2_image  via pkg-config ${SDL2_image_LIBRARIES}")
+else()
+    message(STATUS "SDL2_image  ${SDL2_image_VERSION} via CMake config ${SDL2_image_LIBRARIES}")
+endif()
+message(STATUS "SDL2_ttf    ${SDL2_ttf_VERSION} ${SDL2_ttf_LIBRARY}")
+message(STATUS "SDL2_mixer  ${SDL2_mixer_VERSION} ${SDL2_mixer_LIBRARY}")
 
 # ---------------------------------------------------------------- core sources
 # NOTE: deliberately zero network build dependencies beyond SDL2. The content
