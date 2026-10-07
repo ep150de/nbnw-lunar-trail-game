@@ -7,6 +7,14 @@ namespace lt {
 
 namespace {
 constexpr double kG0 = 9.80665;
+
+// M_PI is a POSIX extension, not standard C++, and MSVC does not define it.
+// Spelling the constant out keeps this file portable; the conversions below are
+// the only places the code needs it.
+constexpr double kPi = 3.14159265358979323846;
+
+constexpr double degToRad(double deg) { return deg * kPi / 180.0; }
+constexpr double radToDeg(double rad) { return rad * 180.0 / kPi; }
 }
 
 void DescentSim::reset(const Balance& b, double descentCargoKg) {
@@ -75,13 +83,13 @@ void DescentSim::throttleDown(double dt) {
 
 void DescentSim::tiltLeft(double dt) {
     if (phase_ != DescentPhase::Flying) return;
-    const double maxRad = maxTiltDeg_ * M_PI / 180.0;
+    const double maxRad = degToRad(maxTiltDeg_);
     tiltRad_ = std::max(-maxRad, tiltRad_ - dt * 0.22);
 }
 
 void DescentSim::tiltRight(double dt) {
     if (phase_ != DescentPhase::Flying) return;
-    const double maxRad = maxTiltDeg_ * M_PI / 180.0;
+    const double maxRad = degToRad(maxTiltDeg_);
     tiltRad_ = std::min(maxRad, tiltRad_ + dt * 0.22);
 }
 
@@ -160,7 +168,7 @@ void DescentSim::step(double dt) {
         y_ += t_.vsMps * h;
         t_.altitudeM -= std::abs(t_.vsMps) * h;
 
-        t_.tiltDeg = tiltRad_ * 180.0 / M_PI;
+        t_.tiltDeg = radToDeg(tiltRad_);
         t_.groundSpeedMps = std::hypot(t_.hsMps, t_.vsMps);
 
         // Predicted intercept with the current throttle held: the player's main
