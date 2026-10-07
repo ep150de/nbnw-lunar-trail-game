@@ -87,6 +87,10 @@ jobs:
       - name: Install SDL2 via vcpkg
         run: |
           git clone https://github.com/microsoft/vcpkg
+          # Cloning vcpkg gives you the tool's source; vcpkg.exe is built by the
+          # bootstrap script. Without this the next line cannot find the binary.
+          & "$env:GITHUB_WORKSPACE\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg bootstrap failed" }
           # Manifest mode: the dependency list lives in vcpkg.json, so no package
           # names are passed on the command line. PowerShell re-parses a native
           # command's argument list, which mangled `sdl2_image` into a URL-ish
