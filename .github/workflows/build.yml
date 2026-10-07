@@ -97,10 +97,15 @@ jobs:
           # token and made vcpkg abort with "invalid character in port name".
           & "$env:GITHUB_WORKSPACE\vcpkg\vcpkg.exe" install `
               --triplet x64-windows --x-manifest-root="$env:GITHUB_WORKSPACE"
-          echo "VCPKG_ROOT=$env:GITHUB_WORKSPACE\vcpkg" >> $env:GITHUB_ENV
         shell: pwsh
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DLUNAR_TRAIL_BUILD_TESTS=ON
+        # The vcpkg checkout path is derived from GITHUB_WORKSPACE rather than an
+        # env var written by the previous step: that write did not reach this
+        # step and CMake was handed an empty toolchain path.
+        run: >
+          cmake -S . -B build
+          -DCMAKE_TOOLCHAIN_FILE="$env:GITHUB_WORKSPACE/vcpkg/scripts/buildsystems/vcpkg.cmake"
+          -DLUNAR_TRAIL_BUILD_TESTS=ON
         shell: pwsh
       - name: Build
         run: cmake --build build --config Release
