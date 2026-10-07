@@ -1,0 +1,23 @@
+build/
+build-*/
+cmake-build-*/
+.cache/
+compile_commands.json
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Runtime user data (wrecks, top ten, unlocks)
+userdata/
+*.sav
+
+# Third-party asset downloads (fetched by tools/fetch_cc0.py, not committed)
+assets/thirdparty/_raw/

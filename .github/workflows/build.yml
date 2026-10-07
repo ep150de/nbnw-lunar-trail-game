@@ -1,0 +1,101 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ubuntu:
+    name: Linux (Ubuntu, gcc + clang)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SDL2
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev \
+            python3-pil
+      - name: Verify assets are in sync with their generators
+        run: |
+          # The generated font and art are committed. If regenerating them
+          # produces a diff, the committed copies are stale.
+          python3 tools/gen_font.py
+          python3 tools/gen_art.py
+          if ! git diff --quiet -- assets/gen assets/sprites; then
+            echo "::error::Generated assets are out of date. Run the tools and commit the result."
+            git diff --stat -- assets/gen assets/sprites
+            exit 1
+          fi
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLUNAR_TRAIL_BUILD_TESTS=ON
+      - name: Build (gcc)
+        run: cmake --build build -j
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Build with warnings as errors (clang)
+        run: |
+          sudo apt-get install -y clang
+          cmake -S . -B build-clang -DCMAKE_BUILD_TYPE=Debug \
+                -DCMAKE_CXX_COMPILER=clang++ -DLUNAR_TRAIL_BUILD_TESTS=ON \
+                -DCMAKE_CXX_FLAGS="-Werror"
+          cmake --build build-clang -j
+      - name: Build with the strict warning set (clang)
+        # Beyond what the project enables by default. This is the gate that keeps
+        # signedness bugs -- the ones that only bite on a platform where an int
+        # is not 32 bits -- out of the tree.
+        run: |
+          cmake -S . -B build-strict -DCMAKE_BUILD_TYPE=Debug \
+                -DCMAKE_CXX_COMPILER=clang++ -DLUNAR_TRAIL_BUILD_TESTS=ON \
+                -DCMAKE_CXX_FLAGS="-Werror -Wpedantic -Wshadow -Wconversion -Wsign-conversion -Wold-style-cast -Wnull-dereference -Wdouble-promotion"
+          cmake --build build-strict -j
+      - name: UI capture test
+        run: |
+          cmake --build build --target lunar_trail_ui_capture
+          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./build/lunar_trail_ui_capture
+      - name: Balance harness (does not gate the build)
+        run: |
+          cmake --build build --target balance_harness
+          ./build/balance_harness
+        continue-on-error: true
+
+  macos:
+    name: macOS
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SDL2
+        run: brew install cmake sdl2 sdl2_image sdl2_ttf sdl2_mixer python@3.12
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLUNAR_TRAIL_BUILD_TESTS=ON
+      - name: Build
+        run: cmake --build build -j
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  windows:
+    name: Windows
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lukka/get-cmake@latest
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install SDL2 via vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg
+          vcpkg install sdl2 sdl2_image sdl2_ttf sdl2_mixer
+          echo "VCPKG_ROOT=$PWD/vcpkg" >> $env:GITHUB_ENV
+        shell: pwsh
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DLUNAR_TRAIL_BUILD_TESTS=ON
+        shell: pwsh
+      - name: Build
+        run: cmake --build build --config Release
+        shell: pwsh
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+        shell: pwsh

@@ -1,0 +1,21 @@
+CC0 1.0 Universal (CC0 1.0) - Public Domain Dedication
+======================================================
+
+The artwork in assets/sprites/ and assets/gen/ is dedicated to the public
+domain under the Creative Commons CC0 1.0 Universal Public Domain Dedication.
+
+To the extent possible under law, the authors have waived all copyright and
+related or neighbouring rights to these files. Where a waiver is not possible,
+this dedication operates as a licence under the following terms:
+
+  You may copy, modify, distribute and use the artwork, including for
+  commercial purposes, all without asking permission and without attribution.
+
+Full legal text: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+NOTE ON SCOPE
+-------------
+This dedication covers the generated artwork only. It does not cover, and is
+not offered for, any third-party material -- of which this repository contains
+none. See assets/NOTICE-ASSETS.md for the full provenance audit, including why no
+NASA material is present.
