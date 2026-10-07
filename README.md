@@ -1,5 +1,7 @@
 # Lunar Trail
 
+[![build](https://github.com/ep150de/nbnw-lunar-trail-game/actions/workflows/build.yml/badge.svg)](https://github.com/ep150de/nbnw-lunar-trail-game/actions/workflows/build.yml)
+
 **The Oregon Trail, reflight.** An open-source survival-logistics game about
 driving one hundred and twenty kilometres across the lunar south pole, from a
 landing site to a colony that is waiting to find out whether you arrived.
